@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Tiket & Pelanggan Internet</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: 'var(--brand-50, #eff6ff)',
+                            100: 'var(--brand-100, #dbeafe)',
+                            500: 'var(--brand-500, #3b82f6)',
+                            600: 'var(--brand-600, #2563eb)',
+                            700: 'var(--brand-700, #1d4ed8)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+        }
+        .btn-primary-custom {
+            background-color: var(--primary-color);
+        }
+        .btn-primary-custom:hover {
+            background-color: var(--primary-hover);
+        }
+        .bg-primary-custom {
+            background-color: var(--primary-color);
+        }
+        .text-primary-custom {
+            color: var(--primary-color);
+        }
+        .border-primary-custom {
+            border-color: var(--primary-color);
+        }
+
+        /* Responsive Mobile Specific tweaks */
+        @media (max-width: 640px) {
+            .mobile-padding {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            .mobile-table-scroll {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-size: 12pt;
+            }
+            .printable-area {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+        }
+        .print-only {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- LOGIN PAGE CONTAINER -->
+    <div id="loginPage" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-95 p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 border border-slate-100">
+            <div class="text-center mb-6">
+                <div id="loginLogoPreview" class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner overflow-hidden">
+                    <i id="loginDefaultIcon" class="fa-solid fa-wifi text-2xl"></i>
+                    <img id="loginCustomLogo" src="" alt="Logo" class="w-full h-full object-cover hidden">
+                </div>
+                <h2 id="loginBrandTitle" class="text-2xl font-bold text-slate-800">NOC Internet Service</h2>
+                <p class="text-slate-500 text-sm mt-1">Masuk untuk mengakses portal manajemen</p>
+            </div>
+
+            <!-- Toast / Message Box -->
+            <div id="loginAlert" class="hidden mb-4 p-3 rounded-lg text-sm font-medium"></div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Username</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" id="loginUsername" required class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Masukkan username">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" id="loginPassword" required class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Masukkan password">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full btn-primary-custom text-white font-semibold py-2.5 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-200 text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Masuk Sistem
+                </button>
+            </form>
+            <p class="text-xs text-center text-slate-400 mt-6">Sistem Manajemen Gangguan & Pelanggan ISP</p>
+        </div>
+    </div>
+
+    <!-- MAIN APP STRUCTURE -->
+    <div id="mainApp" class="hidden min-h-screen flex flex-col md:flex-row">
+        
+        <!-- SIDEBAR (Desktop) -->
+        <aside class="no-print hidden md:flex md:w-64 bg-slate-900 text-slate-300 flex-col flex-shrink-0 min-h-screen">
+            <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+                <div id="sidebarLogoContainer" class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                    <i id="sidebarDefaultIcon" class="fa-solid fa-network-wired"></i>
+                    <img id="sidebarCustomLogo" src="" alt="Logo" class="w-full h-full object-cover hidden">
+                </div>
+                <div>
+                    <h1 id="sidebarBrandName" class="font-bold text-white text-base leading-tight truncate w-40">NetOps Center</h1>
+                    <span class="text-xs text-slate-400">ISP Portal v2.0</span>
+                </div>
+            </div>
+
+            <!-- Current User Badge -->
+            <div class="px-5 py-3 bg-slate-800/60 mx-3 my-3 rounded-xl flex items-center justify-between">
+                <div class="flex items-center gap-2.5 overflow-hidden">
+                    <div class="w-8 h-8 rounded-full bg-slate-700 text-slate-200 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                        <span id="userAvatarChar">U</span>
+                    </div>
+                    <div class="truncate">
+                        <p id="currentUsernameText" class="text-xs font-semibold text-white truncate">User</p>
+                        <span id="currentUserRoleBadge" class="inline-block text-[10px] font-medium uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">Role</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-3 py-2 space-y-1">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard
+                </button>
+                <button onclick="switchTab('pelanggan')" id="nav-pelanggan" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-users w-5 text-center"></i> Daftar Pelanggan
+                </button>
+                <button onclick="switchTab('tiket')" id="nav-tiket" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-ticket w-5 text-center"></i> Rekap Tiket Gangguan
+                </button>
+                <button onclick="switchTab('users')" id="nav-users" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-user-gear w-5 text-center"></i> Manajemen User
+                </button>
+                <button onclick="switchTab('branding')" id="nav-branding" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-palette w-5 text-center"></i> Kustomisasi Brand
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white text-sm font-medium transition duration-200">
+                    <i class="fa-solid fa-right-from-bracket"></i> Keluar
+                </button>
+            </div>
+        </aside>
+
+        <!-- MOBILE TOP BAR & NAVIGATION -->
+        <div class="no-print md:hidden bg-slate-900 text-white flex flex-col sticky top-0 z-40 shadow-md">
+            <div class="flex items-center justify-between p-4">
+                <div class="flex items-center gap-3">
+                    <div id="mobileLogoContainer" class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center font-bold text-white overflow-hidden">
+                        <i id="mobileDefaultIcon" class="fa-solid fa-wifi text-sm"></i>
+                        <img id="mobileCustomLogo" src="" alt="Logo" class="w-full h-full object-cover hidden">
+                    </div>
+                    <span id="mobileBrandName" class="font-bold text-slate-100 text-base truncate max-w-[180px]">NetOps</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="mobileRoleBadge" class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">ADMIN</span>
+                    <button onclick="toggleMobileMenu()" class="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Dropdown Menu -->
+            <div id="mobileMenu" class="hidden bg-slate-800 border-t border-slate-700 p-3 space-y-1">
+                <button onclick="switchTab('dashboard'); toggleMobileMenu()" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded text-slate-200 text-sm hover:bg-slate-700">
+                    <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
+                </button>
+                <button onclick="switchTab('pelanggan'); toggleMobileMenu()" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded text-slate-200 text-sm hover:bg-slate-700">
+                    <i class="fa-solid fa-users w-5"></i> Daftar Pelanggan
+                </button>
+                <button onclick="switchTab('tiket'); toggleMobileMenu()" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded text-slate-200 text-sm hover:bg-slate-700">
+                    <i class="fa-solid fa-ticket w-5"></i> Rekap Tiket Gangguan
+                </button>
+                <button onclick="switchTab('users'); toggleMobileMenu()" id="mobile-nav-users" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded text-slate-200 text-sm hover:bg-slate-700">
+                    <i class="fa-solid fa-user-gear w-5"></i> Manajemen User
+                </button>
+                <button onclick="switchTab('branding'); toggleMobileMenu()" id="mobile-nav-branding" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded text-slate-200 text-sm hover:bg-slate-700">
+                    <i class="fa-solid fa-palette w-5"></i> Kustomisasi Brand
+                </button>
+                <div class="pt-2 border-t border-slate-700">
+                    <button onclick="handleLogout()" class="w-full text-left flex items-center gap-3 px-3 py-2 rounded text-red-400 text-sm hover:bg-red-900/30">
+                        <i class="fa-solid fa-right-from-bracket w-5"></i> Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT CONTAINER -->
+        <main class="flex-1 bg-slate-50 flex flex-col min-w-0">
+            <!-- Header bar for screen width -->
+            <header class="no-print hidden md:flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 shadow-sm">
+                <div>
+                    <h2 id="pageTitle" class="text-xl font-bold text-slate-800">Dashboard Utama</h2>
+                    <p id="pageSubTitle" class="text-xs text-slate-500">Ringkasan operasional dan status jaringan</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-500" id="currentDateTime"></span>
+                </div>
+            </header>
+
+            <!-- CONTENT AREA -->
+            <div class="p-4 sm:p-6 flex-1">
+
+                <!-- 1. TAB DASHBOARD -->
+                <div id="tab-dashboard" class="tab-content space-y-6">
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl flex-shrink-0">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Total Pelanggan</p>
+                                <h3 id="statTotalCustomers" class="text-xl sm:text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl flex-shrink-0">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Tiket Pending</p>
+                                <h3 id="statActiveTickets" class="text-xl sm:text-2xl font-bold text-amber-600 mt-0.5">0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Tiket Selesai</p>
+                                <h3 id="statResolvedTickets" class="text-xl sm:text-2xl font-bold text-emerald-600 mt-0.5">0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-xl flex-shrink-0">
+                                <i class="fa-solid fa-tower-cell"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">Total Site/POP</p>
+                                <h3 id="statTotalSites" class="text-xl sm:text-2xl font-bold text-slate-800 mt-0.5">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Tickets Preview -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i class="fa-solid fa-clock-rotate-left text-blue-600"></i> Tiket Gangguan Terbaru
+                            </h3>
+                            <button onclick="switchTab('tiket')" class="text-xs text-blue-600 font-semibold hover:underline">
+                                Lihat Semua &rarr;
+                            </button>
+                        </div>
+                        <div class="mobile-table-scroll">
+                            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                                <thead class="bg-slate-50 text-slate-500 border-b border-slate-100 uppercase text-[10px]">
+                                    <tr>
+                                        <th class="p-3">ID Tiket</th>
+                                        <th class="p-3">Pelanggan</th>
+                                        <th class="p-3">Lokasi / Site</th>
+                                        <th class="p-3">Gangguan</th>
+                                        <th class="p-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentTicketsTable" class="divide-y divide-slate-100">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. TAB DAFTAR PELANGGAN -->
+                <div id="tab-pelanggan" class="tab-content hidden space-y-4">
+                    <!-- Actions & Filters Bar -->
+                    <div class="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-white p-3.5 rounded-xl border border-slate-200">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </span>
+                            <input type="text" id="searchCustomerInput" oninput="renderCustomers()" placeholder="Cari Pelanggan (Nama, CID, Site)..." class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="btnAddCustomer" onclick="openCustomerModal()" class="w-full sm:w-auto btn-primary-custom text-white text-xs sm:text-sm px-4 py-2 rounded-lg shadow font-medium flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-user-plus"></i> Tambah Pelanggan
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Customers Table -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="mobile-table-scroll">
+                            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                                <thead class="bg-slate-100/70 text-slate-600 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">CID</th>
+                                        <th class="p-3">Nama Pelanggan</th>
+                                        <th class="p-3">Paket</th>
+                                        <th class="p-3">Tgl Berlangganan</th>
+                                        <th class="p-3">Lokasi/Site</th>
+                                        <th class="p-3">Kontak</th>
+                                        <th class="p-3 text-center no-print-col">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customerTableBody" class="divide-y divide-slate-100">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. TAB REKAP TIKET GANGGUAN -->
+                <div id="tab-tiket" class="tab-content hidden space-y-4">
+                    <div class="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center bg-white p-3.5 rounded-xl border border-slate-200">
+                        <div class="flex flex-col sm:flex-row gap-2 flex-1">
+                            <input type="text" id="searchTicketInput" oninput="renderTickets()" placeholder="Cari Tiket / CID / Nama..." class="w-full sm:w-64 px-3 py-2 text-xs sm:text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500">
+                            <select id="filterStatusTicket" onchange="renderTickets()" class="px-3 py-2 text-xs sm:text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500">
+                                <option value="">Semua Status</option>
+                                <option value="Open">Open</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Resolved">Resolved</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="printAllTickets()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 shadow">
+                                <i class="fa-solid fa-print"></i> Cetak Semua Rekap Tiket
+                            </button>
+                            <button onclick="openTicketModal()" class="btn-primary-custom text-white text-xs sm:text-sm px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 shadow">
+                                <i class="fa-solid fa-plus"></i> Buat Tiket Baru
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tickets Table -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="mobile-table-scroll">
+                            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                                <thead class="bg-slate-100/70 text-slate-600 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">ID Tiket</th>
+                                        <th class="p-3">Tgl Lapor</th>
+                                        <th class="p-3">Pelanggan</th>
+                                        <th class="p-3">Site/Lokasi</th>
+                                        <th class="p-3">Jenis Gangguan</th>
+                                        <th class="p-3">Teknisi</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center no-print-col">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ticketTableBody" class="divide-y divide-slate-100">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. TAB MANAJEMEN USER (Admin Only) -->
+                <div id="tab-users" class="tab-content hidden space-y-4">
+                    <div class="flex items-center justify-between bg-white p-3.5 rounded-xl border border-slate-200">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm sm:text-base">Daftar Pengguna Sistem</h3>
+                            <p class="text-xs text-slate-500">Hanya Admin yang dapat mengelola akun pengguna</p>
+                        </div>
+                        <button onclick="openUserModal()" class="btn-primary-custom text-white text-xs sm:text-sm px-3.5 py-2 rounded-lg font-medium shadow flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-plus"></i> Tambah User Baru
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="mobile-table-scroll">
+                            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                                <thead class="bg-slate-100/70 text-slate-600 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">Username</th>
+                                        <th class="p-3">Nama Lengkap</th>
+                                        <th class="p-3">Kategori / Role</th>
+                                        <th class="p-3 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTableBody" class="divide-y divide-slate-100">
+                                    <!-- Dynamic users -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. TAB BRANDING & BRAND CUSTOMIZATION -->
+                <div id="tab-branding" class="tab-content hidden space-y-6">
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-sm max-w-2xl">
+                        <h3 class="text-lg font-bold text-slate-800 mb-1">Pengaturan Brand & Dashboard</h3>
+                        <p class="text-xs text-slate-500 mb-6">Sesuaikan nama brand, logo ikon, dan warna tema dashboard sesuai keinginan Anda.</p>
+
+                        <form onsubmit="saveBrandingSettings(event)" class="space-y-5">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Brand / Judul Dashboard</label>
+                                <input type="text" id="inputBrandName" required class="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Upload Icon / Logo Dashboard</label>
+                                <div class="flex items-center gap-4">
+                                    <div id="brandingLogoPreviewBox" class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
+                                        <i class="fa-solid fa-wifi text-xl text-slate-400"></i>
+                                    </div>
+                                    <input type="file" id="inputLogoFile" accept="image/*" onchange="previewUploadedLogo(event)" class="text-xs text-slate-500 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                </div>
+                                <p class="text-[11px] text-slate-400 mt-1">Format: PNG/JPG/SVG max 1MB. Disarankan berukuran rasio 1:1.</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Warna Utama Theme</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="color" id="inputBrandColor" value="#2563eb" class="h-10 w-20 rounded border border-slate-300 p-1 cursor-pointer">
+                                    <span class="text-xs text-slate-500">Pilih warna aksen utama aplikasi</span>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-100 flex gap-2">
+                                <button type="submit" class="btn-primary-custom text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow">
+                                    Simpan Perubahan
+                                </button>
+                                <button type="button" onclick="resetBrandingSettings()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium">
+                                    Reset Default
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL 1: PELANGGAN (TAMBAH / EDIT) -->
+    <div id="modalCustomer" class="fixed inset-0 z-50 hidden bg-slate-900/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 id="modalCustomerTitle" class="font-bold text-slate-800 text-base">Tambah Pelanggan Baru</h3>
+                <button onclick="closeCustomerModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="formCustomer" onsubmit="saveCustomer(event)" class="p-5 space-y-4">
+                <input type="hidden" id="custEditIndex" value="-1">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">CID / ID Pelanggan</label>
+                    <input type="text" id="custCid" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Pelanggan</label>
+                    <input type="text" id="custName" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Paket Langganan</label>
+                        <select id="custPackage" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="15Mbps">15Mbps</option>
+                            <option value="20Mbps">20Mbps</option>
+                            <option value="50Mbps">50Mbps</option>
+                            <option value="100Mbps">100Mbps</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tanggal Berlangganan</label>
+                        <input type="date" id="custDate" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lokasi / Site (POP)</label>
+                    <input type="text" id="custSite" placeholder="Contoh: Site Jakarta Selatan" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nomor Telepon/WA</label>
+                    <input type="text" id="custPhone" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeCustomerModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">Batal</button>
+                    <button type="submit" class="btn-primary-custom text-white px-4 py-2 rounded-lg text-xs font-semibold shadow">Simpan Pelanggan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: TIKET GANGGUAN (BUAT / EDIT) -->
+    <div id="modalTicket" class="fixed inset-0 z-50 hidden bg-slate-900/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 id="modalTicketTitle" class="font-bold text-slate-800 text-base">Buat Tiket Gangguan</h3>
+                <button onclick="closeTicketModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="formTicket" onsubmit="saveTicket(event)" class="p-5 space-y-3.5">
+                <input type="hidden" id="ticketEditIndex" value="-1">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Pilih Pelanggan</label>
+                    <select id="ticketCustSelect" onchange="autofillTicketCustData()" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                        <!-- Options generated dynamically -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">CID Pelanggan</label>
+                        <input type="text" id="ticketCid" readonly class="w-full px-3 py-2 bg-slate-100 rounded-lg border border-slate-200 text-sm text-slate-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lokasi/Site</label>
+                        <input type="text" id="ticketSite" readonly class="w-full px-3 py-2 bg-slate-100 rounded-lg border border-slate-200 text-sm text-slate-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Jenis Gangguan / Masalah</label>
+                    <input type="text" id="ticketIssue" required placeholder="Contoh: Kabel FO Putus / Router LOS" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Teknisi Penanggung Jawab</label>
+                        <select id="ticketTech" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                            <!-- Options generated dynamically -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Status Tiket</label>
+                        <select id="ticketStatus" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Catatan / Tindakan Perbaikan</label>
+                    <textarea id="ticketNotes" rows="3" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Keterangan perbaikan..."></textarea>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeTicketModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">Batal</button>
+                    <button type="submit" class="btn-primary-custom text-white px-4 py-2 rounded-lg text-xs font-semibold shadow">Simpan Tiket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: DETAIL TIKET & PRINT PER TIKET -->
+    <div id="modalTicketDetail" class="fixed inset-0 z-50 hidden bg-slate-900/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden border border-slate-100">
+            <div id="printableSingleTicket" class="p-6">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        <div id="printLogoContainer" class="w-10 h-10 rounded bg-blue-600 text-white flex items-center justify-center font-bold text-lg overflow-hidden">
+                            <i id="printDefaultIcon" class="fa-solid fa-wifi"></i>
+                            <img id="printCustomLogo" src="" alt="Logo" class="w-full h-full object-cover hidden">
+                        </div>
+                        <div>
+                            <h2 id="printBrandName" class="font-bold text-slate-800 text-lg">NetOps Internet</h2>
+                            <p class="text-xs text-slate-500">Laporan Resmi Gangguan Layanan</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span id="detailTicketId" class="text-sm font-mono font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded">TKT-1001</span>
+                        <p id="detailTicketDate" class="text-[11px] text-slate-400 mt-1">01/01/2026</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-xs sm:text-sm text-slate-700">
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg">
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400">Nama Pelanggan</p>
+                            <p id="detailCustName" class="font-semibold text-slate-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400">CID / ID Pelanggan</p>
+                            <p id="detailCustCid" class="font-semibold text-slate-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400">Lokasi / Site</p>
+                            <p id="detailCustSite" class="font-semibold text-slate-800">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400">Teknisi Penanggung Jawab</p>
+                            <p id="detailTech" class="font-semibold text-slate-800">-</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-slate-400">Masalah / Keluhan</p>
+                        <p id="detailIssue" class="mt-0.5 p-2 bg-red-50 text-red-800 rounded border border-red-100 font-medium">-</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-slate-400">Status Tiket Saat Ini</p>
+                        <span id="detailStatus" class="inline-block mt-1 px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800">OPEN</span>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-slate-400">Catatan Perbaikan / Tindakan</p>
+                        <p id="detailNotes" class="mt-0.5 p-2.5 bg-slate-50 rounded border border-slate-200 text-slate-600 italic">-</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-4 border-t border-slate-200 flex justify-between text-xs text-slate-400">
+                    <div>Dicetak secara otomatis oleh sistem NOC</div>
+                    <div>Tanda Tangan Teknisi: ____________</div>
+                </div>
+            </div>
+
+            <div class="no-print bg-slate-50 px-5 py-3 border-t border-slate-100 flex justify-between items-center">
+                <button onclick="closeDetailModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200">Tutup</button>
+                <button onclick="window.print()" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow hover:bg-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Cetak Lembar Tiket
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: USER (TAMBAH / EDIT PASSWORD) -->
+    <div id="modalUser" class="fixed inset-0 z-50 hidden bg-slate-900/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 text-base">Tambah Pengguna Baru</h3>
+                <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="formUser" onsubmit="saveUser(event)" class="p-5 space-y-3.5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Username</label>
+                    <input type="text" id="userUsername" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Lengkap</label>
+                    <input type="text" id="userFullName" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+                    <input type="password" id="userPassword" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kategori / Role</label>
+                    <select id="userRole" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500">
+                        <option value="admin">Admin</option>
+                        <option value="owner">Owner</option>
+                        <option value="teknisi">Teknisi</option>
+                    </select>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeUserModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">Batal</button>
+                    <button type="submit" class="btn-primary-custom text-white px-4 py-2 rounded-lg text-xs font-semibold shadow">Simpan User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- INITIAL STATE & DEFAULT DATA ---
+        let currentUser = null;
+
+        // Default Admin credentials as requested: firman / firman23#$
+        const defaultUsers = [
+            { username: 'firman', name: 'Firman Admin', role: 'admin', pass: 'firman23#$' },
+            { username: 'owner1', name: 'Bapak Owner', role: 'owner', pass: 'owner123' },
+            { username: 'teknisi1', name: 'Andi Teknisi', role: 'teknisi', pass: 'teknisi123' }
+        ];
+
+        const defaultCustomers = [
+            { cid: 'CID-1001', name: 'PT Mulia Digital', package: '100Mbps', date: '2025-01-15', site: 'Site Sudirman', phone: '081234567890' },
+            { cid: 'CID-1002', name: 'Toko Berkah Abadi', package: '20Mbps', date: '2025-02-01', site: 'Site Kebayoran', phone: '081987654321' },
+            { cid: 'CID-1003', name: 'Kopi Kenangan Indah', package: '50Mbps', date: '2025-03-10', site: 'Site Sudirman', phone: '082111222333' },
+            { cid: 'CID-1004', name: 'Budi Santoso', package: '15Mbps', date: '2025-04-05', site: 'Site Tebet', phone: '085699887766' }
+        ];
+
+        const defaultTickets = [
+            { id: 'TKT-2001', date: '2026-03-01', custCid: 'CID-1001', custName: 'PT Mulia Digital', site: 'Site Sudirman', issue: 'Kabel Fiber Optic Putus', tech: 'Andi Teknisi', status: 'In Progress', notes: 'Penyambungan ulang core FO' },
+            { id: 'TKT-2002', date: '2026-03-02', custCid: 'CID-1002', custName: 'Toko Berkah Abadi', site: 'Site Kebayoran', issue: 'Router Red LOS', tech: 'Andi Teknisi', status: 'Open', notes: 'Mengecek redaman serat optik' },
+            { id: 'TKT-2003', date: '2026-02-20', custCid: 'CID-1004', custName: 'Budi Santoso', site: 'Site Tebet', issue: 'Internet Lemot', tech: 'Andi Teknisi', status: 'Resolved', notes: 'Reset adaptor modem & ganti patchcord' }
+        ];
+
+        const defaultBranding = {
+            name: 'NOC Internet Service',
+            logo: '',
+            color: '#2563eb'
+        };
+
+        // LocalStorage Helpers
+        function getData(key, fallback) {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : fallback;
+        }
+
+        function saveData(key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+
+        // App Datasets
+        let users = getData('app_users', defaultUsers);
+        let customers = getData('app_customers', defaultCustomers);
+        let tickets = getData('app_tickets', defaultTickets);
+        let branding = getData('app_branding', defaultBranding);
+
+        // --- INIT APPLICATION ---
+        window.onload = function() {
+            applyBranding();
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // Check if user session active
+            const sessionUser = sessionStorage.getItem('active_user');
+            if (sessionUser) {
+                currentUser = JSON.parse(sessionUser);
+                showMainApp();
+            }
+        };
+
+        function updateClock() {
+            const el = document.getElementById('currentDateTime');
+            if(el) {
+                const now = new Date();
+                el.innerText = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+        }
+
+        // --- BRANDING APPLY ---
+        function applyBranding() {
+            document.title = branding.name;
+            document.getElementById('loginBrandTitle').innerText = branding.name;
+            document.getElementById('sidebarBrandName').innerText = branding.name;
+            document.getElementById('mobileBrandName').innerText = branding.name;
+            document.getElementById('printBrandName').innerText = branding.name;
+            document.getElementById('inputBrandName').value = branding.name;
+            document.getElementById('inputBrandColor').value = branding.color || '#2563eb';
+
+            // Apply custom color primary
+            document.documentElement.style.setProperty('--primary-color', branding.color || '#2563eb');
+
+            // Apply Logos
+            const hasLogo = branding.logo && branding.logo.trim() !== '';
+            
+            // Login logo
+            const loginImg = document.getElementById('loginCustomLogo');
+            const loginIcon = document.getElementById('loginDefaultIcon');
+            if(hasLogo) {
+                loginImg.src = branding.logo;
+                loginImg.classList.remove('hidden');
+                loginIcon.classList.add('hidden');
+            } else {
+                loginImg.classList.add('hidden');
+                loginIcon.classList.remove('hidden');
+            }
+
+            // Sidebar logo
+            const sideImg = document.getElementById('sidebarCustomLogo');
+            const sideIcon = document.getElementById('sidebarDefaultIcon');
+            if(hasLogo) {
+                sideImg.src = branding.logo;
+                sideImg.classList.remove('hidden');
+                sideIcon.classList.add('hidden');
+            } else {
+                sideImg.classList.add('hidden');
+                sideIcon.classList.remove('hidden');
+            }
+
+            // Mobile logo
+            const mobImg = document.getElementById('mobileCustomLogo');
+            const mobIcon = document.getElementById('mobileDefaultIcon');
+            if(hasLogo) {
+                mobImg.src = branding.logo;
+                mobImg.classList.remove('hidden');
+                mobIcon.classList.add('hidden');
+            } else {
+                mobImg.classList.add('hidden');
+                mobIcon.classList.remove('hidden');
+            }
+
+            // Print logo
+            const printImg = document.getElementById('printCustomLogo');
+            const printIcon = document.getElementById('printDefaultIcon');
+            if(hasLogo) {
+                printImg.src = branding.logo;
+                printImg.classList.remove('hidden');
+                printIcon.classList.add('hidden');
+            } else {
+                printImg.classList.add('hidden');
+                printIcon.classList.remove('hidden');
+            }
+
+            // Preview box branding
+            const previewBox = document.getElementById('brandingLogoPreviewBox');
+            if(hasLogo) {
+                previewBox.innerHTML = `<img src="${branding.logo}" class="w-full h-full object-cover">`;
+            } else {
+                previewBox.innerHTML = `<i class="fa-solid fa-wifi text-xl text-slate-400"></i>`;
+            }
+        }
+
+        // --- AUTHENTICATION & LOGIN ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const uInput = document.getElementById('loginUsername').value.trim();
+            const pInput = document.getElementById('loginPassword').value.trim();
+            const alertBox = document.getElementById('loginAlert');
+
+            const found = users.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.pass === pInput);
+
+            if (found) {
+                currentUser = found;
+                sessionStorage.setItem('active_user', JSON.stringify(found));
+                alertBox.classList.add('hidden');
+                document.getElementById('loginForm').reset();
+                showMainApp();
+            } else {
+                alertBox.className = "mb-4 p-3 rounded-lg text-xs font-semibold bg-red-100 text-red-700 border border-red-200";
+                alertBox.innerText = "Username atau password salah! Silakan coba lagi.";
+                alertBox.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            sessionStorage.removeItem('active_user');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+
+            // Set user badges
+            document.getElementById('currentUsernameText').innerText = currentUser.name;
+            document.getElementById('userAvatarChar').innerText = currentUser.name.charAt(0).toUpperCase();
+            document.getElementById('currentUserRoleBadge').innerText = currentUser.role.toUpperCase();
+            document.getElementById('mobileRoleBadge').innerText = currentUser.role.toUpperCase();
+
+            // Enforce Role Permissions for Navigation Menu
+            const isTeknisi = currentUser.role === 'teknisi';
+            
+            const navUsers = document.getElementById('nav-users');
+            const navBranding = document.getElementById('nav-branding');
+            const mobUsers = document.getElementById('mobile-nav-users');
+            const mobBranding = document.getElementById('mobile-nav-branding');
+            const btnAddCust = document.getElementById('btnAddCustomer');
+
+            if (isTeknisi) {
+                navUsers.classList.add('hidden');
+                navBranding.classList.add('hidden');
+                if(mobUsers) mobUsers.classList.add('hidden');
+                if(mobBranding) mobBranding.classList.add('hidden');
+                if(btnAddCust) btnAddCust.classList.add('hidden');
+            } else {
+                navUsers.classList.remove('hidden');
+                navBranding.classList.remove('hidden');
+                if(mobUsers) mobUsers.classList.remove('hidden');
+                if(mobBranding) mobBranding.classList.remove('hidden');
+                if(btnAddCust) btnAddCust.classList.remove('hidden');
+            }
+
+            // Switch to Dashboard
+            switchTab('dashboard');
+            renderDashboardStats();
+        }
+
+        // --- TAB SWITCHING ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-slate-800', 'text-white', 'font-bold');
+                el.classList.add('text-slate-300');
+            });
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if(activeTab) activeTab.classList.remove('hidden');
+
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if(activeNav) {
+                activeNav.classList.add('bg-slate-800', 'text-white', 'font-bold');
+                activeNav.classList.remove('text-slate-300');
+            }
+
+            // Update Page Titles
+            const pTitle = document.getElementById('pageTitle');
+            const pSub = document.getElementById('pageSubTitle');
+
+            if(tabId === 'dashboard') {
+                pTitle.innerText = "Dashboard Utama";
+                pSub.innerText = "Ringkasan operasional dan status jaringan";
+                renderDashboardStats();
+            } else if(tabId === 'pelanggan') {
+                pTitle.innerText = "Daftar Pelanggan Internet";
+                pSub.innerText = "Kelola data pelanggan dan lokasi layanan";
+                renderCustomers();
+            } else if(tabId === 'tiket') {
+                pTitle.innerText = "Rekap Tiket Gangguan";
+                pSub.innerText = "Daftar pelaporan gangguan dan penanganan teknisi";
+                renderTickets();
+            } else if(tabId === 'users') {
+                pTitle.innerText = "Manajemen User";
+                pSub.innerText = "Pengaturan akun pengguna dan hak akses";
+                renderUsers();
+            } else if(tabId === 'branding') {
+                pTitle.innerText = "Kustomisasi Brand";
+                pSub.innerText = "Personalisasi logo dan warna aplikasi";
+            }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // --- DASHBOARD RENDER ---
+        function renderDashboardStats() {
+            document.getElementById('statTotalCustomers').innerText = customers.length;
+            
+            const activeCount = tickets.filter(t => t.status === 'Open' || t.status === 'In Progress').length;
+            const resolvedCount = tickets.filter(t => t.status === 'Resolved').length;
+            
+            // Unique sites
+            const sites = new Set(customers.map(c => c.site));
+
+            document.getElementById('statActiveTickets').innerText = activeCount;
+            document.getElementById('statResolvedTickets').innerText = resolvedCount;
+            document.getElementById('statTotalSites').innerText = sites.size;
+
+            // Render Recent Tickets
+            const recentTable = document.getElementById('recentTicketsTable');
+            recentTable.innerHTML = '';
+
+            const recentList = [...tickets].reverse().slice(0, 5);
+            if(recentList.length === 0) {
+                recentTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada data tiket.</td></tr>`;
+                return;
+            }
+
+            recentList.forEach(t => {
+                let badgeClass = "bg-amber-100 text-amber-800";
+                if(t.status === 'Resolved') badgeClass = "bg-emerald-100 text-emerald-800";
+                if(t.status === 'Cancelled') badgeClass = "bg-slate-100 text-slate-600";
+
+                recentTable.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-semibold text-blue-600">${t.id}</td>
+                        <td class="p-3 font-medium text-slate-800">${t.custName}</td>
+                        <td class="p-3 text-slate-500">${t.site}</td>
+                        <td class="p-3 text-slate-600">${t.issue}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[11px] font-bold ${badgeClass}">${t.status}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- CUSTOMER MANAGEMENT ---
+        function renderCustomers() {
+            const search = document.getElementById('searchCustomerInput').value.toLowerCase();
+            const tbody = document.getElementById('customerTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = customers.filter(c => 
+                c.name.toLowerCase().includes(search) || 
+                c.cid.toLowerCase().includes(search) ||
+                c.site.toLowerCase().includes(search)
+            );
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Tidak ada pelanggan ditemukan.</td></tr>`;
+                return;
+            }
+
+            const isTeknisi = currentUser && currentUser.role === 'teknisi';
+
+            filtered.forEach((c, index) => {
+                const globalIndex = customers.indexOf(c);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100">
+                        <td class="p-3 font-mono text-blue-600 font-semibold">${c.cid}</td>
+                        <td class="p-3 font-medium text-slate-800">${c.name}</td>
+                        <td class="p-3"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold text-[11px]">${c.package}</span></td>
+                        <td class="p-3 text-slate-500">${c.date || '-'}</td>
+                        <td class="p-3 text-slate-600">${c.site}</td>
+                        <td class="p-3 text-slate-500">${c.phone}</td>
+                        <td class="p-3 text-center space-x-1 no-print-col">
+                            ${!isTeknisi ? `
+                            <button onclick="openCustomerModal(${globalIndex})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteCustomer(${globalIndex})" class="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                            ` : `<span class="text-xs text-slate-400 italic">View-only</span>`}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openCustomerModal(index = -1) {
+            document.getElementById('custEditIndex').value = index;
+            const form = document.getElementById('formCustomer');
+            form.reset();
+
+            if(index >= 0) {
+                document.getElementById('modalCustomerTitle').innerText = "Edit Data Pelanggan";
+                const c = customers[index];
+                document.getElementById('custCid').value = c.cid;
+                document.getElementById('custName').value = c.name;
+                document.getElementById('custPackage').value = c.package;
+                document.getElementById('custDate').value = c.date;
+                document.getElementById('custSite').value = c.site;
+                document.getElementById('custPhone').value = c.phone;
+            } else {
+                document.getElementById('modalCustomerTitle').innerText = "Tambah Pelanggan Baru";
+                document.getElementById('custCid').value = "CID-" + (1001 + customers.length);
+                document.getElementById('custDate').value = new Date().toISOString().split('T')[0];
+            }
+            document.getElementById('modalCustomer').classList.remove('hidden');
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('modalCustomer').classList.add('hidden');
+        }
+
+        function saveCustomer(e) {
+            e.preventDefault();
+            const idx = parseInt(document.getElementById('custEditIndex').value);
+            const newCust = {
+                cid: document.getElementById('custCid').value.trim(),
+                name: document.getElementById('custName').value.trim(),
+                package: document.getElementById('custPackage').value,
+                date: document.getElementById('custDate').value,
+                site: document.getElementById('custSite').value.trim(),
+                phone: document.getElementById('custPhone').value.trim()
+            };
+
+            if(idx >= 0) {
+                customers[idx] = newCust;
+            } else {
+                customers.push(newCust);
+            }
+
+            saveData('app_customers', customers);
+            closeCustomerModal();
+            renderCustomers();
+        }
+
+        function deleteCustomer(index) {
+            if(confirm("Apakah Anda yakin ingin menghapus pelanggan ini?")) {
+                customers.splice(index, 1);
+                saveData('app_customers', customers);
+                renderCustomers();
+            }
+        }
+
+        // --- TICKET MANAGEMENT ---
+        function renderTickets() {
+            const search = document.getElementById('searchTicketInput').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatusTicket').value;
+            const tbody = document.getElementById('ticketTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = tickets.filter(t => {
+                const matchesSearch = t.id.toLowerCase().includes(search) || 
+                                     t.custName.toLowerCase().includes(search) || 
+                                     t.custCid.toLowerCase().includes(search) ||
+                                     t.site.toLowerCase().includes(search);
+                const matchesStatus = statusFilter === "" || t.status === statusFilter;
+                return matchesSearch && matchesStatus;
+            });
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada tiket ditemukan.</td></tr>`;
+                return;
+            }
+
+            const canDelete = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+
+            filtered.forEach((t) => {
+                const globalIndex = tickets.indexOf(t);
+                
+                let badgeClass = "bg-amber-100 text-amber-800";
+                if(t.status === 'Resolved') badgeClass = "bg-emerald-100 text-emerald-800";
+                if(t.status === 'Cancelled') badgeClass = "bg-slate-100 text-slate-600";
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100">
+                        <td class="p-3 font-mono font-semibold text-blue-600">${t.id}</td>
+                        <td class="p-3 text-slate-500">${t.date}</td>
+                        <td class="p-3 font-medium text-slate-800">${t.custName} <span class="text-[11px] text-slate-400">(${t.custCid})</span></td>
+                        <td class="p-3 text-slate-600">${t.site}</td>
+                        <td class="p-3 text-slate-700 font-medium">${t.issue}</td>
+                        <td class="p-3 text-slate-600">${t.tech}</td>
+                        <td class="p-3"><span class="px-2.5 py-0.5 rounded text-[11px] font-bold ${badgeClass}">${t.status}</span></td>
+                        <td class="p-3 text-center space-x-1 no-print-col">
+                            <button onclick="viewTicketDetail(${globalIndex})" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded" title="Detail & Cetak Tiket"><i class="fa-solid fa-eye"></i></button>
+                            <button onclick="openTicketModal(${globalIndex})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Edit Tiket"><i class="fa-solid fa-pen-to-square"></i></button>
+                            ${canDelete ? `
+                            <button onclick="deleteTicket(${globalIndex})" class="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Hapus Tiket"><i class="fa-solid fa-trash"></i></button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openTicketModal(index = -1) {
+            document.getElementById('ticketEditIndex').value = index;
+            
+            // Populate Customers Select
+            const custSelect = document.getElementById('ticketCustSelect');
+            custSelect.innerHTML = '<option value="">-- Pilih Pelanggan --</option>';
+            customers.forEach((c, idx) => {
+                custSelect.innerHTML += `<option value="${idx}">${c.name} (${c.cid})</option>`;
+            });
+
+            // Populate Tech Select
+            const techSelect = document.getElementById('ticketTech');
+            techSelect.innerHTML = '';
+            const techs = users.filter(u => u.role === 'teknisi' || u.role === 'admin');
+            techs.forEach(u => {
+                techSelect.innerHTML += `<option value="${u.name}">${u.name}</option>`;
+            });
+
+            if(index >= 0) {
+                document.getElementById('modalTicketTitle').innerText = "Edit Tiket Gangguan";
+                const t = tickets[index];
+                
+                // Select customer
+                const custIdx = customers.findIndex(c => c.cid === t.custCid);
+                if(custIdx >= 0) custSelect.value = custIdx;
+
+                document.getElementById('ticketCid').value = t.custCid;
+                document.getElementById('ticketSite').value = t.site;
+                document.getElementById('ticketIssue').value = t.issue;
+                document.getElementById('ticketTech').value = t.tech;
+                document.getElementById('ticketStatus').value = t.status;
+                document.getElementById('ticketNotes').value = t.notes;
+            } else {
+                document.getElementById('modalTicketTitle').innerText = "Buat Tiket Gangguan Baru";
+                document.getElementById('formTicket').reset();
+                document.getElementById('ticketCid').value = '';
+                document.getElementById('ticketSite').value = '';
+            }
+
+            document.getElementById('modalTicket').classList.remove('hidden');
+        }
+
+        function autofillTicketCustData() {
+            const select = document.getElementById('ticketCustSelect');
+            const idx = select.value;
+            if(idx !== "") {
+                const c = customers[idx];
+                document.getElementById('ticketCid').value = c.cid;
+                document.getElementById('ticketSite').value = c.site;
+            } else {
+                document.getElementById('ticketCid').value = "";
+                document.getElementById('ticketSite').value = "";
+            }
+        }
+
+        function closeTicketModal() {
+            document.getElementById('modalTicket').classList.add('hidden');
+        }
+
+        function saveTicket(e) {
+            e.preventDefault();
+            const idx = parseInt(document.getElementById('ticketEditIndex').value);
+            const custIdx = document.getElementById('ticketCustSelect').value;
+
+            if(custIdx === "") {
+                alert("Silakan pilih pelanggan terlebih dahulu!");
+                return;
+            }
+
+            const cust = customers[custIdx];
+            const newTicket = {
+                id: idx >= 0 ? tickets[idx].id : "TKT-" + (2000 + tickets.length + 1),
+                date: idx >= 0 ? tickets[idx].date : new Date().toISOString().split('T')[0],
+                custCid: cust.cid,
+                custName: cust.name,
+                site: cust.site,
+                issue: document.getElementById('ticketIssue').value.trim(),
+                tech: document.getElementById('ticketTech').value,
+                status: document.getElementById('ticketStatus').value,
+                notes: document.getElementById('ticketNotes').value.trim()
+            };
+
+            if(idx >= 0) {
+                tickets[idx] = newTicket;
+            } else {
+                tickets.push(newTicket);
+            }
+
+            saveData('app_tickets', tickets);
+            closeTicketModal();
+            renderTickets();
+        }
+
+        function deleteTicket(index) {
+            if(confirm("Apakah Anda yakin ingin menghapus tiket gangguan ini? (Hanya Admin/Owner yang dapat menghapus)")) {
+                tickets.splice(index, 1);
+                saveData('app_tickets', tickets);
+                renderTickets();
+            }
+        }
+
+        function viewTicketDetail(index) {
+            const t = tickets[index];
+            document.getElementById('detailTicketId').innerText = t.id;
+            document.getElementById('detailTicketDate').innerText = t.date;
+            document.getElementById('detailCustName').innerText = t.custName;
+            document.getElementById('detailCustCid').innerText = t.custCid;
+            document.getElementById('detailCustSite').innerText = t.site;
+            document.getElementById('detailTech').innerText = t.tech;
+            document.getElementById('detailIssue').innerText = t.issue;
+            document.getElementById('detailStatus').innerText = t.status.toUpperCase();
+            document.getElementById('detailNotes').innerText = t.notes || 'Belum ada catatan.';
+
+            document.getElementById('modalTicketDetail').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('modalTicketDetail').classList.add('hidden');
+        }
+
+        // Print All Tickets Summary
+        function printAllTickets() {
+            window.print();
+        }
+
+        // --- USER MANAGEMENT ---
+        function renderUsers() {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+
+            users.forEach((u, index) => {
+                let badge = "bg-blue-100 text-blue-800";
+                if(u.role === 'owner') badge = "bg-purple-100 text-purple-800";
+                if(u.role === 'teknisi') badge = "bg-slate-100 text-slate-800";
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100">
+                        <td class="p-3 font-semibold text-slate-800">${u.username}</td>
+                        <td class="p-3 text-slate-600">${u.name}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[11px] font-bold uppercase ${badge}">${u.role}</span></td>
+                        <td class="p-3 text-center">
+                            ${u.username !== 'firman' ? `
+                            <button onclick="deleteUser(${index})" class="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Hapus User"><i class="fa-solid fa-trash"></i></button>
+                            ` : `<span class="text-[11px] text-slate-400 italic">Default Admin</span>`}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openUserModal() {
+            document.getElementById('formUser').reset();
+            document.getElementById('modalUser').classList.remove('hidden');
+        }
+
+        function closeUserModal() {
+            document.getElementById('modalUser').classList.add('hidden');
+        }
+
+        function saveUser(e) {
+            e.preventDefault();
+            const username = document.getElementById('userUsername').value.trim();
+            const fullName = document.getElementById('userFullName').value.trim();
+            const pass = document.getElementById('userPassword').value.trim();
+            const role = document.getElementById('userRole').value;
+
+            // Check existing
+            if(users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                alert("Username tersebut sudah digunakan!");
+                return;
+            }
+
+            users.push({
+                username: username,
+                name: fullName,
+                pass: pass,
+                role: role
+            });
+
+            saveData('app_users', users);
+            closeUserModal();
+            renderUsers();
+        }
+
+        function deleteUser(index) {
+            if(confirm(`Yakin ingin menghapus pengguna ${users[index].username}?`)) {
+                users.splice(index, 1);
+                saveData('app_users', users);
+                renderUsers();
+            }
+        }
+
+        // --- BRANDING & DASHBOARD CUSTOMIZATION ---
+        function previewUploadedLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    branding.logo = e.target.result;
+                    applyBranding();
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveBrandingSettings(e) {
+            e.preventDefault();
+            branding.name = document.getElementById('inputBrandName').value.trim();
+            branding.color = document.getElementById('inputBrandColor').value;
+            
+            saveData('app_branding', branding);
+            applyBranding();
+            alert("Pengaturan Brand dan Dashboard berhasil disimpan!");
+        }
+
+        function resetBrandingSettings() {
+            if(confirm("Kembalikan pengaturan brand ke default?")) {
+                branding = { ...defaultBranding };
+                saveData('app_branding', branding);
+                applyBranding();
+            }
+        }
+    </script>
+</body>
+</html>
